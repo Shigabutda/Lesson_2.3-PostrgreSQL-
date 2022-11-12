@@ -1,0 +1,164 @@
+CREATE TABLE department
+(
+	id SERIAL PRIMARY KEY,
+	name CHARACTER VARYING(30),
+	manager_name CHARACTER VARYING(50),
+	employees_count INTEGER
+);
+CREATE TABLE employee 
+(
+	id SERIAL PRIMARY KEY,
+	full_name CHARACTER VARYING(50),
+	birth_date date,
+	start_jobs_date date,
+	post CHARACTER VARYING(30),
+	employee_level CHARACTER VARYING(10),
+	CONSTRAINT check_employee_level CHECK 
+		(employee_level IN ('jun', 'middle', 'senior', 'lead')),
+	salary_level INTEGER,
+	department_id SERIAL,
+	access CHARACTER VARYING(5) NOT NULL,
+	CONSTRAINT check_access CHECK 
+		(access IN ('True', 'False')),
+	FOREIGN KEY(department_id) REFERENCES department (id)
+);
+
+CREATE TABLE bonus_coef
+(
+	bonus_id CHARACTER VARYING(1) PRIMARY KEY,
+	coefficient NUMERIC
+);
+CREATE TABLE year_bouns
+(
+	employee_name CHARACTER VARYING(50),
+	bonus CHARACTER VARYING(1),
+	CONSTRAINT check_bonus CHECK 
+		(bonus IN ('A', 'B', 'C', 'D', 'E')),
+	FOREIGN KEY (bonus) REFERENCES bonus_coef (bonus_id)
+);
+
+
+INSERT INTO department
+VALUES
+(1, 'IT', 'Иванов Иван Петрович', 5),
+(2, 'Бухгалтерия', 'Кудряшев Петр Сергеевич', 3)
+;
+INSERT INTO employee
+VALUES
+(1001, 'Иванов Иван Петрович', '19.05.1980', '01.10.2016', 'HEAD DE Engineer', 'lead', 500000, 1, 'True'),
+(1002, 'Петрова Яна Олеговна', '11.05.1994', '14.05.2020', 'Engineer', 'jun', 100000, 1, 'False'),
+(1003, 'Сидоренко Андрей Яковлевич', '20.10.1990', '05.06.2019', 'Devops engineer', 'middle', 250000, 1, 'True'),
+(1004, 'Кудряшев Петр Сергеевич', '26.01.1989', '01.10.2016', 'Главный бухгалтер', 'senior', 150000, 2, 'False'),
+(1005, 'Киселева Анна Юрьевна', '21.11.1999', '01.06.2020', 'Бухгалтер', 'jun', 50000, 2, 'False'),
+(1006, 'Плоткин Виктор Иванович', '14.07.1993', '01.06.2020', 'Системный аналитик', 'senior', 200000, 1, 'True')
+;
+
+INSERT INTO bonus_coef
+VALUES
+('A', 1.2),
+('B', 1.1),
+('C', 1.0),
+('D', 0.9),
+('E', 0.8);
+
+INSERT INTO year_bouns
+VALUES
+('Иванов Иван Петрович', 'A'),
+('Петрова Яна Олеговна', 'C'),
+('Сидоренко Андрей Яковлевич', 'B'),
+('Кудряшев Петр Сергеевич', 'E'),
+('Киселева Анна Юрьевна', 'A'),
+('Плоткин Виктор Иванович', 'D')
+;
+ALTER TABLE year_bouns RENAME TO year_bonus;
+
+ALTER TABLE department  ALTER COLUMN "name" SET  DATA TYPE varchar(130);
+
+
+INSERT INTO department
+VALUES
+(3, 'отдел Интеллектуального анализа данных', 'Дорогин Евгений Павлович', 3)
+;
+INSERT INTO employee
+VALUES 
+(1007, 'Дорогин Евгений Павлович', '20.07.1980', '01.11.2022', 'Lead Data Science', 'lead', 300000, 1, 'True'),
+(1008, 'Веселов Пётр Николаевич', '04.05.2000', '12.11.2022', 'Data Science', 'jun', 80000, 1, 'False'),
+(1009, 'Панина Оксана Марковна', '11.08.1997', '12.11.2022', 'Data SCience', 'middle', 120000, 1, 'True')
+;
+
+6.1   Уникальный номер сотрудника, его ФИО и стаж работы – для всех сотрудников компании
+
+SELECT id,
+	   full_name,
+	   (CAST('12.11.2022' AS timestamp) - CAST(start_jobs_date AS timestamp)) AS work_experience
+FROM employee;
+
+6.2   Уникальный номер сотрудника, его ФИО и стаж работы – только первых 3-х сотрудников
+
+SELECT id,
+	   full_name,
+	   (CAST('12.11.2022' AS timestamp) - CAST(start_jobs_date AS timestamp)) AS work_experience
+FROM employee
+LIMIT 3;
+
+6.3. Уникальный номер сотрудников - бухгалтеров
+
+SELECT id
+FROM employee
+WHERE post LIKE('%ухгалтер%')
+
+6.4. Выведите номера сотрудников, которые хотя бы за 1 квартал получили оценку D или E
+
+TRUNCATE TABLE year_bonus;
+
+UPDATE bonus_coef
+SET coefficient = 0.2
+WHERE bonus_id = 'A';
+UPDATE bonus_coef
+SET coefficient = 0.1
+WHERE bonus_id = 'B';
+UPDATE bonus_coef
+SET coefficient = 0.0
+WHERE bonus_id = 'C';
+UPDATE bonus_coef
+SET coefficient = -0.1
+WHERE bonus_id = 'D';
+UPDATE bonus_coef
+SET coefficient = -0.2
+WHERE bonus_id = 'E';
+
+
+ALTER TABLE year_bonus DROP COLUMN bonus;
+
+ALTER TABLE year_bonus 
+ADD  COLUMN bonus_1q CHARACTER VARYING(1) CONSTRAINT check_bonus_1q CHECK (bonus_1q IN ('A', 'B', 'C', 'D', 'E')),
+ADD  COLUMN bonus_2q CHARACTER VARYING(1) CONSTRAINT check_bonus_2q CHECK (bonus_2q IN ('A', 'B', 'C', 'D', 'E')),
+ADD  COLUMN bonus_3q CHARACTER VARYING(1) CONSTRAINT check_bonus_3q CHECK (bonus_3q IN ('A', 'B', 'C', 'D', 'E')),
+ADD  COLUMN bonus_4q CHARACTER VARYING(1) CONSTRAINT check_bonus_4q CHECK (bonus_4q IN ('A', 'B', 'C', 'D', 'E'))
+;
+
+INSERT INTO year_bonus
+VALUES
+('Иванов Иван Петрович', 'A', 'B', 'C', 'A'),
+('Петрова Яна Олеговна', 'C', 'D', 'E', 'A'),
+('Сидоренко Андрей Яковлевич', 'B', 'B', 'C', 'C'),
+('Кудряшев Петр Сергеевич', 'E', 'E', 'A', 'C'),
+('Киселева Анна Юрьевна', 'A', 'A', 'A', 'C'),
+('Плоткин Виктор Иванович', 'D', 'A', 'B', 'A')
+;
+
+Конечный вывод
+SELECT e.id AS id
+FROM employee AS e
+RIGHT JOIN year_bonus AS yb ON yb.employee_name  = e.full_name
+WHERE yb.bonus_1q IN ('D', 'E')
+OR yb.bonus_2q IN ('D', 'E')
+OR yb.bonus_3q IN ('D', 'E')
+OR yb.bonus_4q IN ('D', 'E')
+;
+
+6.5. Выведите самую высокую зарплату в компании.
+
+SELECT MAX(salary_level)
+FROM employee;
+
